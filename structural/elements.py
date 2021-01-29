@@ -1,4 +1,4 @@
-from math import sin, cos, tan, degrees, radians, pow
+from math import sin, radians
 
 
 class ProjectUnits:
@@ -56,6 +56,7 @@ class Soil:
         self.title = title
         self.weight = weight
         self.phi = phi
+        self.wall_friction = 2 * self.phi * 2 / 3
 
     def ka(self):
         """Calculates active soil pressure coefficient"""
@@ -88,3 +89,8 @@ class Soil:
         _msg = _msg.format(self.title, _ret)
         # return ka and a message
         return [_ret, _msg]
+
+
+if __name__ == '__main--':
+    soil = Soil
+    pass
