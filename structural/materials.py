@@ -43,6 +43,8 @@ class Concrete:
         self.Name = name
         self.CompressionStrength = fc
         self.UnitWeight = weight
+        self.Modulus = self.get_modulus()
+        self.LightweightFactor = 1.0
 
     def get_modulus(self):
         """Calculates Young's Modulus of concrete in accordance with design code specified."""
@@ -62,9 +64,4 @@ class Concrete:
 
 
 if __name__ == '__main__':
-    design_code = Aci31814
-    material = Concrete(design_code, "Concrete", 45, 25)
-    print(material.get_modulus())
-    print(design_code.CodeName)
-    print(material.MaterialType)
     pass

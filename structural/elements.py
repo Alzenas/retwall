@@ -56,7 +56,7 @@ class Soil:
         self.title = title
         self.weight = weight
         self.phi = phi
-        self.wall_friction = 2 * self.phi * 2 / 3
+        self.wall_friction = self.phi * 2 / 3
 
     def ka(self):
         """Calculates active soil pressure coefficient"""
