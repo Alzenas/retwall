@@ -22,6 +22,31 @@ class ProjectUnits:
         pass
 
 
+class Shape:
+    Rectangular = 0
+    Contiguous = 1
+    Secant = 2
+    Sheet = 3
+
+
+class WallSection:
+    """Cross section class."""
+
+    def __init__(self, _shape):
+        self.shape = _shape
+
+
+class Wall:
+    """Concrete Wall Class. Defines basic properties of a concrete wall."""
+
+    def __init__(self, _id):
+        self.ID = _id
+        self.name = []
+        self.thickness = []
+        self.height = []
+        self.length = []
+
+
 class Force:
     """Force class. Defines basic properties of force."""
 
