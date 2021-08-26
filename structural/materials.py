@@ -5,6 +5,7 @@ from enum import Enum
 
 class CodeType(Enum):
     """Enumeration of Structural Design Codes."""
+    ACI318_19 = "ACI318-19"
     ACI318_14 = "ACI318-14"
     ACI318_10 = "ACI318-10"
 
@@ -34,6 +35,13 @@ class Aci31814(Code):
     CodeName = cType.value
 
 
+class Aci31819(Code):
+    """ACI 318-19 Code Definitions."""
+    # Defined for later use
+    cType = CodeType.ACI318_19  # define type by CodeType(Enum)
+    CodeName = cType.value
+
+
 class Concrete:
     """Structural concrete class."""
     MaterialType = MaterialType.Concrete.value
@@ -51,7 +59,9 @@ class Concrete:
         _ct = CodeType  # temp definition, for easier typing in code
 
         # define a condition for ACI codes
-        _aci_code = bool(self.code.cType == _ct.ACI318_10 or self.code.cType == _ct.ACI318_14)
+        _aci_code = bool(self.code.cType == _ct.ACI318_10 or
+                         self.code.cType == _ct.ACI318_14 or
+                         self.code.cType == _ct.ACI318_19)
 
         _Ec = 0
         if _aci_code:
