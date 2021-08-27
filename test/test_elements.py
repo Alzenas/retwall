@@ -58,6 +58,6 @@ class TestElements(unittest.TestCase):
         self.assertEqual(result, 0)
 
 
-if __name__ == '__main--':
+if __name__ == '__main__':
     # run the tests
     unittest.main()
