@@ -3,11 +3,9 @@
 
 from structural.elements import *
 from structural.materials import *
+from structural.matrices import *
 
 if __name__ == '__main__':
-    structural_code = Aci31814
-    c35 = Concrete(structural_code, "C35/45", 35, 25)
-    c45 = Concrete(structural_code, "C45/55", 45, 25)
 
     # Define test soil layers --------------------------------------------
     geology = []
@@ -44,47 +42,51 @@ if __name__ == '__main__':
 
     # Enf of Test Soil Layers Definitions ------------------------------------------------
 
+    # Define test materials
+    structural_code = Aci31814
+    c35 = Concrete(structural_code, "C35/45", 35, 25)
+    c45 = Concrete(structural_code, "C45/55", 45, 25)
+
     # Define test walls ------------------------------------------------------------------
     numberOfSegments = 4  # number of walls
     wallSegment = []
     for i in range(0, numberOfSegments):
         wallSegment.append(Wall(i))
         wallSegment[i].length = 1.0  # unit length of the wall
+        wallSegment[i].alignment = Alignment.Left.value
+        wallSegment[i].material = c35
 
     i = 0  # first segment
     wallSegment[i].name = "Parapet"
     wallSegment[i].thickness = 150
     wallSegment[i].height = 1.2
-    wallSegment[i].alignment = Alignment.Left
 
     i = 1  # second segment
     wallSegment[i].name = "Top Wall"
     wallSegment[i].thickness = 250
     wallSegment[i].height = 2.0
-    wallSegment[i].alignment = Alignment.Left
 
     i = 2  # third segment
     wallSegment[i].name = "Lower Wall"
     wallSegment[i].thickness = 350
     wallSegment[i].height = 1.5
-    wallSegment[i].alignment = Alignment.Left
 
     i = 3  # fourth segment (heel)
     wallSegment[i].name = "Heel"
     wallSegment[i].thickness = 250
     wallSegment[i].height = 0.95
-    wallSegment[i].alignment = Alignment.Left
 
     verticalWallPoints = [0]
     for i in range(0, numberOfSegments):
         verticalWallPoints.append(wallSegment[i].height + verticalWallPoints[-1])
 
     print(verticalWallPoints)
+    print(wallSegment[0].material.Name)
+
     # enf of temporary wall definitions --------------------------------------
 
     # Collect all vertical points into a single, sorted list (use a set, to remove duplicates)
     verticalPoints = sorted(set(verticalSoilPoints + verticalWallPoints))
     print("Significant vertical points: {}".format(verticalPoints))
-
 
     pass

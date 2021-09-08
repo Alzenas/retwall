@@ -1,4 +1,5 @@
 from math import sin, radians
+from enum import Enum
 
 
 class ProjectUnits:
@@ -22,14 +23,14 @@ class ProjectUnits:
         pass
 
 
-class Shape:
+class Shape(Enum):
     Rectangular = 0
     Contiguous = 1
     Secant = 2
     Sheet = 3
 
 
-class Alignment:
+class Alignment(Enum):
     Left = "Left"
     Right = "Right"
     Centre = "Centre"
@@ -51,7 +52,8 @@ class Wall:
         self.thickness = []  # thickness of wall segment
         self.height = []  # height of wall segment
         self.length = 1.0  # unit length of wall segment
-        self.alignment = Alignment.Left  # wall alignment in relation to the topmost wall segment
+        self.alignment = Alignment.Left.value  # wall alignment in relation to the topmost wall segment
+        self.material = []  # wall segment material
 
 
 class UniformLoad:
