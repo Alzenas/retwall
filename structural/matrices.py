@@ -1,5 +1,4 @@
 import numpy as np
-from scipy import sparse
 
 # define a single beam element stiffness matrix coefficients
 local_element_stiffness = np.array([[12, 6, -12, 6], [6, 4, -6, 2], [-12, -6, 12, -6], [6, 2, -6, 4]], dtype=float)
