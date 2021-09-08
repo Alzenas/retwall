@@ -49,7 +49,7 @@ def assemble_global_matrix(_local_matrix, _num_nodes):
     return _global
 
 
-def element_results(_results, _L, _EI):
+def get_element_results(_results, _L, _EI):
     """Assembles element results into a single matrix"""
     # Results of the linear solver are comprised of a single matric which
     # contains calculated displacements and rotations:
@@ -57,6 +57,7 @@ def element_results(_results, _L, _EI):
 
     # first separate displacements from rotations
     _y = _results[0::2]  # takes every other value, starting from index 0
+    # _y = lambda x: round(x, 1): _y
     _theta = _results[1::2]  # takes every other value, starting from index 1
 
     # from derivations from first principles the formula for the moment
@@ -77,7 +78,11 @@ def element_results(_results, _L, _EI):
     _nodal_q = []  # nodal shear
     _L2 = _L ** 2
     _EIL2 = _EI / _L2
+    _x = [0]
     for i in range(0, len(_y) - 1):
+        # derive nodal x values
+        _x.append(_x[-1] + _L)
+
         # define parameters used in the equation
         _d1 = _y[i]
         _d2 = _y[i + 1]
@@ -93,7 +98,7 @@ def element_results(_results, _L, _EI):
     # add last moment (node 2) to nodal moments array
     _nodal_m.append(_element_m[-1][1])
 
-    # derive nodal sheras from average (element) shears
+    # derive nodal shears from average (element) shears
     for i in range(0, len(_element_q) - 1):
         _qn = 2 * _element_q[i] - 0.5 * (_element_q[i] + _element_q[i + 1])
         _nodal_q.append(round(_qn, 3))
@@ -105,7 +110,7 @@ def element_results(_results, _L, _EI):
     _qn = 2 * _element_q[-1] - _nodal_q[-1]
     _nodal_q.append(round(_qn, 3))
 
-    return _y, _theta, _element_m, _nodal_m, _nodal_q
+    return _x, _y, _theta, _element_m, _nodal_m, _nodal_q
 
 
 def set_nodal_boundary_conditions(_node, _global_matrix, _loads, _condition="fixed"):
@@ -143,41 +148,64 @@ def set_nodal_boundary_conditions(_node, _global_matrix, _loads, _condition="fix
 
 
 if __name__ == '__main__':
+    # *****************    TEST AREA HERE   **************************************
     from structural.materials import Concrete, Aci31814
     import matplotlib.pyplot as plt
+
+    num_nodes = 21  # number of nodes to use for analysis
+    num_elements = num_nodes - 1  # inferred number of elements
+    L = 5  # overall length of beam in m
+    Le = L / num_elements  # length of local element
 
     # define concrete
     c35 = Concrete(Aci31814, "C35/45", 35, 24.5)
     Ec = 1000000 * c35.Modulus  # Young's Modulus in N/m2
-    Iz = (400 / 1000) * (600 / 1000) ** 3 / 12  # Test section 400 x 600 mm
-    EI = Ec * Iz
-    L = 5  # 2000 # overall length of beam
-    num_nodes = 101
-    num_elements = num_nodes - 1
-    x = np.linspace(0, L, num_nodes)  # x values for subsequent plotting of results
-    L = L / num_elements  # length of local element
-    q0 = -10  # in kN/m
-    q0 = 1000 * q0 * L  # split udl between the two nodes at each end of element
 
+    # define beam section properties
+    width = 250  # in mm
+    depth = 400  # in mm
+
+    # second moment of area
+    Iz = (width / 1000) * (depth / 1000) ** 3 / 12  # Test section 400 x 600 mm
+
+    # stiffness parameter EI
+    EI = Ec * Iz
+
+    # applied Uniformly Distributed Load:
+    q = -10  # applied UDL in kN/m
+    q0 = 1000 * q * Le  # force derived from UDL for application to each nodes
     # define a test load matrix [V1, M1, V2, M2... Vn, Mn]
     load = []
     for i in range(0, num_nodes):
-        load.append(q0)
-        load.append(0)
+        load.append(q0)  # applied force
+        load.append(0)  # applied moment
     load[0] = 0.5 * load[0]  # load on first node is only a half
     load[-2] = 0.5 * load[-2]  # load on the last node is only a half
 
-    local_matrix = assemble_local_matrix(local_element_stiffness, L, EI)
+    # prepare local matrix (include element length and EI into it)
+    local_matrix = assemble_local_matrix(local_element_stiffness, Le, EI)
+    # assemble global matrix
     global_matrix = assemble_global_matrix(local_matrix, num_nodes)
 
-    # Assign boundary conditions to global stiffness matrix and load matrix
-    global_matrix, load = set_nodal_boundary_conditions(0, global_matrix, load, _condition='fixed')
+    # Assign boundary conditions to global stiffness matrix and load matrix END 1
+    global_matrix, load = set_nodal_boundary_conditions(0, global_matrix, load, _condition='pinned')
+    # Assign boundary conditions to global stiffness matrix and load matrix END 2
     global_matrix, load = set_nodal_boundary_conditions(num_nodes - 1, global_matrix, load, _condition='pinned')
 
     # solve matrix
     result = np.linalg.solve(global_matrix, load)
-    # get element results and separate them
-    y, theta, element_moments, nodal_moments, shears = element_results(result, L, EI)
+
+    # extract element results and separate them
+    x, y, theta, element_moments, nodal_moments, shears = get_element_results(result, Le, EI)
+    # convert displacements to mm (*1000) and round to 3 decimals
+    y = list(map(lambda _k: round(1000 * _k, 3), y))
+
+    # output to screen
+    print("************** RESULTS SUMMARY ***************")
+    print("Moment maxima: \t{} kNm and {} kNm".format(max(nodal_moments), min(nodal_moments)))
+    print("Shear maxima: \t{} kN and {} kN".format(max(shears), min(shears)))
+    print("Deflection maxima: \t{} mm and {} mm".format(max(y), min(y)))
+    print("**********************************************")
 
     # plot results
     plt.figure(figsize=(10, 8))
