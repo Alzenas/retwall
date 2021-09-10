@@ -1,5 +1,7 @@
-from math import sin, radians
+from math import sin, radians, pi
 from enum import Enum
+from structural.matrices import assemble_local_matrix
+from structural.materials import Concrete, Aci31814
 
 
 class ProjectUnits:
@@ -30,6 +32,34 @@ class Shape(Enum):
     Sheet = 3
 
 
+class RectangularSection:
+    def __init__(self, _width, _depth):
+        self.name = 'REC_{}x{}'.format(_width, _depth)
+        self.width = _width
+        self.depth = _depth
+        self.area = self.get_section_area()
+        self.Izz = self.get_moment_of_inertia()
+
+    def get_moment_of_inertia(self):
+        return self.width * self.depth ** 3 / 12
+
+    def get_section_area(self):
+        return self.width * self.depth
+
+
+class CircularSection:
+    def __init__(self, _diameter):
+        self.diameter = _diameter
+        self.area = self.get_section_area()
+        self.Izz = self.get_moment_of_inertia()
+
+    def get_moment_of_inertia(self):
+        return pi * self.diameter ** 4 / 64
+
+    def get_section_area(self):
+        return 0.25 * pi * self.diameter ** 2
+
+
 class Alignment(Enum):
     Left = "Left"
     Right = "Right"
@@ -49,7 +79,7 @@ class Wall:
     def __init__(self, _id):
         self.ID = _id  # Unique identifier
         self.name = []  # Descriptive name of wall layer
-        self.thickness = []  # thickness of wall segment
+        self.section = []  # thickness of wall segment
         self.height = []  # height of wall segment
         self.length = 1.0  # unit length of wall segment
         self.alignment = Alignment.Left.value  # wall alignment in relation to the topmost wall segment
@@ -83,6 +113,12 @@ class BendingMoment:
         self.mz = []  # Magnitude of the bending moment
         self.x = []  # Point of application or occurrence (x-direction)
         self.y = []  # Point of application or occurrence (y-direction)
+
+
+class Position:
+    def __init__(self):
+        self.x = []  # x position
+        self.y = []  # y position
 
 
 class Displacement:
@@ -140,6 +176,52 @@ class Soil:
         return [_ret, _msg]
 
 
-if __name__ == '__main--':
+class Node:
+    def __init__(self, _id, _x, _y):
+        self.id = _id
+        self.x = _x
+        self.y = _y
+
+
+class BeamFiniteElement:
+    def __init__(self, _id, _node1, _node2):
+        self.id = _id
+        self.material = Concrete(Aci31814, "Concrete C35", 35, 25)  # material assigned to the element
+        self.node1 = _node1
+        self.node2 = _node2
+        self.length = self.get_length()
+        self.section = RectangularSection(_width=1000, _depth=500)
+        self.EI = self.get_EI()
+        self.stiffness_matrix = self.get_stiffness_matrix()
+
+    def get_length(self):
+        # calculate length of element from node geometry
+        return ((self.node2.y - self.node1.y) ** 2 + (self.node2.x - self.node1.x) ** 2) ** 0.5
+
+    def get_EI(self):
+        _E = self.material.get_modulus() * 1000000  # convert to N/m2
+        _I = self.section.get_moment_of_inertia() / (1000 ** 4)  # convert to m4
+        return _E * _I
+
+    def get_stiffness_matrix(self):
+        # assemble local matrix
+        return assemble_local_matrix(self.get_length(), self.get_EI())
+
+    def refresh(self):
+        self.length = self.get_length()
+        self.section.Izz = self.section.get_moment_of_inertia()
+        self.section.area = self.section.get_section_area()
+        self.EI = self.get_EI()
+        self.stiffness_matrix = self.get_stiffness_matrix()
+
+
+if __name__ == '__main__':
     soil = Soil
+
+    node1 = Node(0, 0, 0)
+    node2 = Node(1, 1, 1)
+    fe = BeamFiniteElement(0, node1, node2)
+    fe.get_stiffness_matrix()
+    print(fe.stiffness_matrix)
+
     pass
